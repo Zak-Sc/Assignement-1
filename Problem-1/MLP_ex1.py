@@ -91,19 +91,20 @@ class NN(object):
             return input
         
     #prediction
-    # we do not explicitely use cross entropy in the loss function but rather
-    # in the derivative since it was not specifically asked. This function is thus
-    # a performance function
+    # cross entropy and performance
     def loss(self,dataset,type_activation):
         output = []
         test = dataset[:,:-1]
         target = dataset[:,-1]
-		    
+        l = 0
         self.forward(test,type_activation)
+        for i in range(len(test)):
+            l -= np.log(self.y[int(target[i]),i]+1/100000)
+            #print (np.log(self.y[int(target[i]),i]))
         output=np.argmax(self.y,axis=0).flatten()
         performance = np.mean(target==output)
     
-        return 100*performance
+        return 100*performance, l/len(test)
     
     # finite difference derivative
     # we calulate the effect of modifying the first row of W2 on the prediction of train[0,:]
@@ -220,10 +221,10 @@ class NN(object):
             n_iter +=batchsize
             # after each epoch compute performane on train and valid
             if i%50000 == 0:
-              perfo1 = self.loss(train_sample,init_activ)
-              perfo2 = self.loss(valid,init_activ)
+              [perfo1,loss_train] = self.loss(train_sample,init_activ)
+              [perfo2, loss_valid] = self.loss(valid,init_activ)
               p_data.append((perfo1,perfo2))
-              print(perfo1,perfo2)
+              print("acc train:" + str(perfo1) +",acc_valid:" + str(perfo2) +",loss_train:"+str(loss_train)+", loss_valid:"+str(loss_valid))
         
         return grad_W3, grad_W2, grad_W1,p_data   
     
@@ -239,7 +240,7 @@ if __name__ == '__main__':
        valid = train[50001:60000,:]
        #init tech [1=zero,2=normal,3=glorot]    init_activ [1=tanh,2=sigmoid,3=relu], 
        #batchsize,lambda,n_epoch
-       [gw3,gw2,gw1,p_data]=RN.train(train[:50000,:],(900,300),3,1,20,0.05,0.01,10)
+       [gw3,gw2,gw1,p_data]=RN.train(train[:100,:],(900,300),3,3,20,0.05,0.01,10)
  
        # derivatives for 15 points
        deriv10=RN.derL(15,1/10,train,1)
